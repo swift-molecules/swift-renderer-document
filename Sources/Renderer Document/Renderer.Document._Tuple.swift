@@ -1,0 +1,45 @@
+public import Renderer
+
+// WHY: full Swift only. Embedded Swift cannot specialize on a parameter pack's elements, so its builder
+// nests Renderer.Document.Pair instead (swift-atoms/swift-renderer#2).
+#if !hasFeature(Embedded)
+    extension Renderer.Document {
+
+        public struct _Tuple<each Content> {
+
+            public let content: (repeat each Content)
+
+            public init(_ content: repeat each Content) {
+                self.content = (repeat each content)
+            }
+        }
+    }
+
+    extension Renderer.Document._Tuple: Renderer.Document.View where repeat each Content: Renderer.Document.View {
+
+        public typealias Body = Never
+
+        public var body: Never { Self.unrendered }
+
+        public static func _render(
+            _ view: borrowing Self,
+            context: inout Renderer.Document.Context
+        ) {
+            let marker = context._stackDepth
+            func push<V: Renderer.Document.View>(_ v: V, _ ctx: inout Renderer.Document.Context) {
+                let pointer = UnsafeMutablePointer<V>.allocate(capacity: 1)
+                unsafe pointer.initialize(to: v)
+                unsafe ctx._stack.append(
+                    .render(
+                        pointer: UnsafeMutableRawPointer(pointer),
+                        thunk: Renderer.Document.Thunk(V.self)
+                    )
+                )
+            }
+            repeat push(each view.content, &context)
+            context._reverseAbove(marker)
+        }
+    }
+
+    extension Renderer.Document._Tuple: Sendable where repeat each Content: Sendable {}
+#endif

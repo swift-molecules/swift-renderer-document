@@ -1,0 +1,8 @@
+description: "A document view machine for Swift: views built with a result builder, rendered from an explicit work stack and replayed to a backend as push, pop, text and break calls."
+topics:
+  - molecules
+  - renderer
+  - document
+homepage: "https://swift-institute.org"
+readme:
+  family: E
